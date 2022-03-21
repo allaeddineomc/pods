@@ -20,6 +20,8 @@ mod imp {
     pub(crate) struct ContainerRow {
         pub(super) container: WeakRef<model::Container>,
         #[template_child]
+        pub(super) user_label: TemplateChild<gtk::Label>,
+        #[template_child]
         pub(super) status_label: TemplateChild<gtk::Label>,
         #[template_child]
         pub(super) menu_stack: TemplateChild<gtk::Stack>,
@@ -134,6 +136,13 @@ mod imp {
                     utils::escape(&utils::format_option(name))
                 }))
                 .bind(obj, "subtitle", Some(obj));
+
+            container_expr
+                .chain_property::<model::Container>("user")
+                .chain_closure::<String>(closure!(|_: Self::Type, user: Option<String>| {
+                    utils::format_option(user)
+                }))
+                .bind(&*self.user_label, "label", Some(obj));
 
             status_expr
                 .chain_closure::<String>(closure!(

@@ -88,6 +88,7 @@ mod imp {
         pub(super) image_name: RefCell<Option<String>>,
         pub(super) name: RefCell<Option<String>>,
         pub(super) status: Cell<Status>,
+        pub(super) user: RefCell<Option<String>>,
     }
 
     #[glib::object_subclass]
@@ -155,6 +156,15 @@ mod imp {
                         Status::default() as i32,
                         glib::ParamFlags::READWRITE | glib::ParamFlags::EXPLICIT_NOTIFY,
                     ),
+                    glib::ParamSpecString::new(
+                        "user",
+                        "User",
+                        "The user of this container",
+                        Option::default(),
+                        glib::ParamFlags::READWRITE
+                            | glib::ParamFlags::CONSTRUCT
+                            | glib::ParamFlags::EXPLICIT_NOTIFY,
+                    ),
                 ]
             });
             PROPERTIES.as_ref()
@@ -175,6 +185,7 @@ mod imp {
                 "image-name" => obj.set_image_name(value.get().unwrap()),
                 "name" => obj.set_name(value.get().unwrap()),
                 "status" => obj.set_status(value.get().unwrap()),
+                "user" => obj.set_user(value.get().unwrap()),
                 _ => unimplemented!(),
             }
         }
@@ -188,6 +199,7 @@ mod imp {
                 "image-name" => obj.image_name().to_value(),
                 "name" => obj.name().to_value(),
                 "status" => obj.status().to_value(),
+                "user" => obj.user().to_value(),
                 _ => unimplemented!(),
             }
         }
@@ -206,6 +218,10 @@ impl From<api::LibpodContainerInspectResponse> for Container {
             ("image-name", &inspect_response.image_name),
             ("name", &inspect_response.name),
             ("status", &status(inspect_response.state)),
+            (
+                "user",
+                &inspect_response.config.and_then(|config| config.user),
+            ),
         ])
         .expect("Failed to create Container")
     }
@@ -217,6 +233,7 @@ impl Container {
         self.set_image_name(inspect_response.image_name);
         self.set_name(inspect_response.name);
         self.set_status(status(inspect_response.state));
+        self.set_user(inspect_response.config.and_then(|config| config.user));
     }
 
     pub(crate) fn action_ongoing(&self) -> bool {
@@ -285,6 +302,18 @@ impl Container {
         }
         self.imp().status.set(value);
         self.notify("status");
+    }
+
+    pub(crate) fn user(&self) -> Option<String> {
+        self.imp().user.borrow().to_owned()
+    }
+
+    pub(crate) fn set_user(&self, value: Option<String>) {
+        if self.user() == value {
+            return;
+        }
+        self.imp().user.replace(value);
+        self.notify("user");
     }
 }
 

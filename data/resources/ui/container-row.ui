@@ -6,6 +6,10 @@
     <property name="action-name">container.show-details</property>
 
     <child>
+      <object class="GtkLabel" id="user_label"/>
+    </child>
+
+    <child>
       <object class="GtkLabel" id="status_label">
         <style>
           <class name="container-status"/>
